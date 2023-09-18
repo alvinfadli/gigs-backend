@@ -1,10 +1,10 @@
 const express = require("express");
-const { authenticate } = require("../../controllers/userController"); // Adjust the path as needed
+const { hrAuthenticate } = require("../../controllers/hrController"); // Adjust the path as needed
 
 const router = express.Router();
 
 // Authentication route
-router.post("/login", authenticate, (req, res) => {
+router.post("/login", hrAuthenticate, (req, res) => {
   // Send the JWT token and user type in the response
   res.status(200).json({
     accessToken: req.accessToken,

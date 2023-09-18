@@ -5,17 +5,18 @@ const url = "mongodb://localhost:27017/joblisting";
 
 //Models
 const User = require("./models/User");
+const Hr = require("./models/Hr");
 const UserProfile = require("./models/UserProfile");
 
 //Routes
-const registerRoute = require("./routes/user/register");
-const loginRoute = require("./routes/user/login"); // Import authentication routes
+const userRegisterRoute = require("./routes/user/register");
+const userLoginRoute = require("./routes/user/login");
+
+const hrRegisterRoute = require("./routes/hr/register");
+const hrLoginRoute = require("./routes/hr/login");
 
 //Middlewares
-const {
-  authenticate,
-  jwtSecretKey,
-} = require("./middlewares/user/authMiddleware");
+const { authenticate, jwtSecretKey } = require("./middlewares/authMiddleware");
 
 const app = express();
 
@@ -30,10 +31,12 @@ con.on("open", () => {
 app.use(express.json());
 
 //Using register route
-app.use("/api", registerRoute);
+app.use("/api", userRegisterRoute);
+app.use("/api/hr", hrRegisterRoute);
 
 //Using login route
-app.use("/api/auth", loginRoute);
+app.use("/api/auth", userLoginRoute);
+app.use("/api/hr/auth", hrLoginRoute);
 
 // Protected route (requires authentication)
 app.get("/api/protected", authenticate, (req, res) => {
