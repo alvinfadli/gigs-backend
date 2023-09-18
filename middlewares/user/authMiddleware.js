@@ -5,26 +5,6 @@ const jwtSecretKey = process.env.TOKEN_SECRET;
 
 // Middleware function to authenticate requests
 function authenticate(req, res, next) {
-  // Get the token from the request headers, query parameters, or cookies (customize as needed)
-  // const accessToken = req.headers.authorization.split(" ")[1];
-
-  // if (!accessToken) {
-  //   return res.status(401).json({ message: "Authentication required" });
-  // }
-
-  // // Verify the token
-  // jwt.verify(accessToken, jwtSecretKey, (err, decoded) => {
-  //   if (err) {
-  //     console.log(jwtSecretKey);
-  //     console.log(accessToken);
-  //     console.error("Error verifying token:", err);
-  //     return res.status(401).json({ message: "Invalid token" });
-  //   }
-
-  //   // Store user information in the request for use in other routes
-  //   req.user = decoded;
-  //   next();
-  // });
   const authorizationHeader = req.headers.authorization;
 
   if (!authorizationHeader) {

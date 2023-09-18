@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/User");
-const UserProfile = require("../models/UserProfile");
+const User = require("../../models/User");
+const UserProfile = require("../../models/UserProfile");
 const bcrypt = require("bcrypt");
 
 router.post("/register", async (req, res) => {
@@ -12,24 +12,28 @@ router.post("/register", async (req, res) => {
   const { username, name, email, password, re_password } = req.body;
 
   try {
-    // Check if the username and email are unique
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
 
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "Username or email already exists" });
+      return res.status(400).json({
+        error: {
+          code: 400,
+          message: "Username or email already exists",
+        },
+      });
     }
 
-    // Ensure the password and re_password match
     if (password !== re_password) {
-      return res.status(400).json({ message: "Passwords do not match" });
+      return res.status(400).json({
+        error: {
+          code: 400,
+          message: "Passwords do not match",
+        },
+      });
     }
 
-    // Hash the user's password before storing it
-    const hashedPassword = await bcrypt.hash(password, 10); // 10 is the number of salt rounds
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user with the hashed password
     const newUser = new User({
       username,
       email,
@@ -52,10 +56,19 @@ router.post("/register", async (req, res) => {
 
     await userProfile.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({
+      data: {
+        message: "User registered successfully",
+      },
+    });
   } catch (error) {
     console.error("Registration error:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({
+      error: {
+        code: 500,
+        message: "Internal Server Error",
+      },
+    });
   }
 });
 

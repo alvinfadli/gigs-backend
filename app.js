@@ -8,7 +8,14 @@ const User = require("./models/User");
 const UserProfile = require("./models/UserProfile");
 
 //Routes
-const register = require("./routes/register");
+const registerRoute = require("./routes/user/register");
+const loginRoute = require("./routes/user/login"); // Import authentication routes
+
+//Middlewares
+const {
+  authenticate,
+  jwtSecretKey,
+} = require("./middlewares/user/authMiddleware");
 
 const app = express();
 
@@ -22,13 +29,21 @@ con.on("open", () => {
 // Middleware
 app.use(express.json());
 
-//Using Register Router
-app.use("/api", register);
+//Using register route
+app.use("/api", registerRoute);
+
+//Using login route
+app.use("/api/auth", loginRoute);
+
+// Protected route (requires authentication)
+app.get("/api/protected", authenticate, (req, res) => {
+  // Access user data from req.user (includes userType)
+  res.status(200).json({ message: "Protected route" });
+});
 
 // const Application = require("./models/Application");
 // const Job = require("./models/Job");
-// const authRoutes = require("./routes/auth"); // Import authentication routes
-// const { authenticate, jwtSecretKey } = require("./middlewares/authMiddleware"); // Import authentication controller
+// Import authentication controller
 // const userProfileRoutes = require("./routes/userProfile");
 // const jobRoutes = require("./routes/job");
 // const jwt = require("jsonwebtoken");
@@ -54,23 +69,12 @@ app.use("/api", register);
 
 // // Define your routes here
 
-// // Authentication route
-// app.use("/api/auth", authRoutes);
-
 // // Use the registration route
 // app.use("/api", registrationRoutes);
 
 // app.use("/api", userProfileRoutes);
 
 // app.use("/api", jobRoutes);
-
-// // Protected route example (requires authentication)
-// app.get("/api/protected", authenticate, (req, res) => {
-//   // Access user data from req.user (includes userType)
-//   res
-//     .status(200)
-//     .json({ message: "Protected route", userType: req.user.userType });
-// });
 
 // Start the server
 const PORT = process.env.PORT || 3000;
