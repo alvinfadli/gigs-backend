@@ -9,6 +9,7 @@ router.post("/login", hrAuthenticate, (req, res) => {
   res.status(200).json({
     accessToken: req.accessToken,
     refreshToken: req.refreshToken,
+    userType: req.userType,
   });
 });
 

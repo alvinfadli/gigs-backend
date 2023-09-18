@@ -1,16 +1,14 @@
-// jobRoutes.js
 const express = require("express");
 const router = express.Router();
-const { body, validationResult } = require("express-validator"); // Import express-validator
-const Job = require("../models/Job"); // Import the Job model
-const auth = require("../middlewares/authMiddleware"); // Import the authentication middleware
+const { body, validationResult } = require("express-validator");
+const Job = require("../../models/Job");
+const auth = require("../../middlewares/authMiddleware");
+const { resJSON } = require("../../responseHandler");
 
-// Create a new job with input validation
 router.post(
   "/create-job",
   auth.authenticate,
   [
-    // Validate input fields
     body("title").notEmpty().withMessage("Title is required"),
     body("company_name").notEmpty().withMessage("Company name is required"),
     body("description").notEmpty().withMessage("Description is required"),
@@ -30,32 +28,23 @@ router.post(
   ],
   async (req, res) => {
     try {
-      // Check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return resJSON(res, 400, errors.array(), "Validation failed");
+      }
+      if (req.user.userType !== "hr") {
+        return resJSON(res, 403, null, "Only HR users can create jobs");
       }
 
-      // Check if the authenticated user is an HR user
-      if (req.user.userType !== "HR") {
-        return res
-          .status(403)
-          .json({ message: "Only HR users can create jobs" });
-      }
-
-      // Create a new job using the request body
       const newJob = new Job(req.body);
-      newJob.hrUser = req.user.id; // Set the HR user ID
+      newJob.hrUser = req.user.id;
 
-      // Save the job to the database
       await newJob.save();
 
-      res
-        .status(201)
-        .json({ message: "Job created successfully", job: newJob });
+      resJSON(res, 201, newJob, "Job created successfully");
     } catch (error) {
       console.error("Job creation error:", error);
-      res.status(500).json({ message: "Internal Server Error" });
+      resJSON(res, 500, null, "Internal Server Error");
     }
   }
 );
@@ -64,7 +53,6 @@ router.put(
   "/edit-job/:jobId",
   auth.authenticate,
   [
-    // Validate input fields
     body("title").notEmpty().withMessage("Title is required"),
     body("company_name").notEmpty().withMessage("Company name is required"),
     body("description").notEmpty().withMessage("Description is required"),
@@ -84,26 +72,22 @@ router.put(
   ],
   async (req, res) => {
     try {
-      // Check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return resJSON(res, 400, null, errors.array());
       }
 
-      // Check if the authenticated user is an HR user
-      if (req.user.userType !== "HR") {
-        return res.status(403).json({ message: "Only HR users can edit jobs" });
+      if (req.user.userType !== "hr") {
+        return resJSON(res, 403, null, "Only HR users can edit jobs");
       }
 
       const jobId = req.params.jobId;
 
-      // Find the job by ID and check if it exists
       const existingJob = await Job.findById(jobId);
       if (!existingJob) {
-        return res.status(404).json({ message: "Job not found" });
+        return resJSON(res, 404, null, "Job not found");
       }
 
-      // Update the job fields with the request body
       existingJob.title = req.body.title;
       existingJob.company_name = req.body.company_name;
       existingJob.description = req.body.description;
@@ -113,28 +97,24 @@ router.put(
       existingJob.postedDate = req.body.postedDate;
       existingJob.status = req.body.status;
 
-      // Save the updated job to the database
       await existingJob.save();
 
-      res
-        .status(200)
-        .json({ message: "Job updated successfully", job: existingJob });
+      resJSON(res, 200, existingJob, { message: "Job updated successfully" });
     } catch (error) {
       console.error("Job update error:", error);
-      res.status(500).json({ message: "Internal Server Error" });
+      resJSON(res, 500, null, "Internal Server Error");
     }
   }
 );
 
 router.get("/jobs", auth.authenticate, async (req, res) => {
   try {
-    // Retrieve all jobs from the database
     const jobs = await Job.find();
 
-    res.status(200).json(jobs);
+    resJSON(res, 200, jobs);
   } catch (error) {
     console.error("Error retrieving jobs:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    resJSON(res, 500, null, "Internal Server Error");
   }
 });
 
@@ -142,18 +122,46 @@ router.get("/jobs/:jobId", auth.authenticate, async (req, res) => {
   try {
     const jobId = req.params.jobId;
 
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return resJSON(res, 404, null, "Job not found");
+    }
+
+    resJSON(res, 200, job);
+  } catch (error) {
+    console.error("Error retrieving job by ID:", error);
+    resJSON(res, 500, null, "Internal Server Error");
+  }
+});
+
+router.get("/jobs/apply/:jobId", auth.authenticate, async (req, res) => {
+  try {
+    const jobId = req.params.jobId;
+    const userId = req.user.id;
+
     // Find the job by ID in the database
     const job = await Job.findById(jobId);
 
     if (!job) {
-      return res.status(404).json({ message: "Job not found" });
+      return resJSON(res, 404, null, "Job not found");
     }
 
-    // Return the job details
-    res.status(200).json(job);
+    // Check if the user has already applied for this job
+    if (job.userApplied.includes(userId)) {
+      return resJSON(res, 400, null, "You have already applied for this job");
+    }
+
+    // Add the userId to the userApplied array
+    job.userApplied.push(userId);
+
+    // Save the updated job
+    await job.save();
+
+    resJSON(res, 200, { message: "Job application successful" });
   } catch (error) {
-    console.error("Error retrieving job by ID:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error applying for a job:", error);
+    resJSON(res, 500, null, "Internal Server Error");
   }
 });
 

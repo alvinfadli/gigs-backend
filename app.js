@@ -15,6 +15,8 @@ const userLoginRoute = require("./routes/user/login");
 const hrRegisterRoute = require("./routes/hr/register");
 const hrLoginRoute = require("./routes/hr/login");
 
+const jobRoutes = require("./routes/job/job");
+
 //Middlewares
 const { authenticate, jwtSecretKey } = require("./middlewares/authMiddleware");
 
@@ -38,6 +40,9 @@ app.use("/api/hr", hrRegisterRoute);
 app.use("/api/auth", userLoginRoute);
 app.use("/api/hr/auth", hrLoginRoute);
 
+//Using job route
+app.use("/api", jobRoutes);
+
 // Protected route (requires authentication)
 app.get("/api/protected", authenticate, (req, res) => {
   // Access user data from req.user (includes userType)
@@ -48,7 +53,6 @@ app.get("/api/protected", authenticate, (req, res) => {
 // const Job = require("./models/Job");
 // Import authentication controller
 // const userProfileRoutes = require("./routes/userProfile");
-// const jobRoutes = require("./routes/job");
 // const jwt = require("jsonwebtoken");
 // const cors = require("cors");
 
@@ -76,8 +80,6 @@ app.get("/api/protected", authenticate, (req, res) => {
 // app.use("/api", registrationRoutes);
 
 // app.use("/api", userProfileRoutes);
-
-// app.use("/api", jobRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 3000;

@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const jobSchema = new mongoose.Schema({
   hrUser: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Hr",
   },
   title: String,
   company_name: String,
@@ -12,6 +12,7 @@ const jobSchema = new mongoose.Schema({
   salary: String,
   applicationDeadline: Date,
   postedDate: Date,
+  userApplied: [String],
   status: {
     type: String,
     enum: ["CONTRACT", "FULL_TIME", "INTERNSHIP"],
