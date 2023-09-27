@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
 const Job = require("../../models/Job");
+const Application = require("../../models/Application");
 const auth = require("../../middlewares/authMiddleware");
 const { resJSON } = require("../../responseHandler");
 
@@ -107,7 +108,7 @@ router.put(
   }
 );
 
-router.get("/jobs", auth.authenticate, async (req, res) => {
+router.get("/jobs", async (req, res) => {
   try {
     const jobs = await Job.find();
 
@@ -140,23 +141,28 @@ router.get("/jobs/apply/:jobId", auth.authenticate, async (req, res) => {
     const jobId = req.params.jobId;
     const userId = req.user.id;
 
-    // Find the job by ID in the database
-    const job = await Job.findById(jobId);
-
-    if (!job) {
-      return resJSON(res, 404, null, "Job not found");
-    }
-
     // Check if the user has already applied for this job
-    if (job.userApplied.includes(userId)) {
-      return resJSON(res, 400, null, "You have already applied for this job");
+    const existingApplication = await Application.findOne({
+      user: userId,
+      job: jobId,
+    });
+
+    if (existingApplication) {
+      return resJSON(res, 400, {
+        message: "You have already applied for this job.",
+      });
     }
 
-    // Add the userId to the userApplied array
-    job.userApplied.push(userId);
+    // Create a new application
+    const newApplication = new Application({
+      user: userId,
+      job: jobId,
+      applicationDate: new Date(),
+      status: "Pending", // You can set the initial status as you prefer
+    });
 
-    // Save the updated job
-    await job.save();
+    // Save the application to the database
+    await newApplication.save();
 
     resJSON(res, 200, { message: "Job application successful" });
   } catch (error) {

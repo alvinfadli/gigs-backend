@@ -9,13 +9,13 @@ router.post("/register", async (req, res) => {
     return resJSON(res, 405, null, "Method Not Allowed");
   }
 
-  const { username, email, password, re_password } = req.body;
+  const { name, email, password, re_password } = req.body;
 
   try {
-    const existingUser = await Hr.findOne({ $or: [{ username }, { email }] });
+    const existingUser = await Hr.findOne({ email });
 
     if (existingUser) {
-      return resJSON(res, 400, null, "Username or email already exists");
+      return resJSON(res, 400, null, "email already exists");
     }
 
     if (password !== re_password) {
@@ -25,7 +25,7 @@ router.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new Hr({
-      username,
+      name,
       email,
       password: hashedPassword,
     });

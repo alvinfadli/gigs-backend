@@ -1,6 +1,5 @@
 const jwt = require("jsonwebtoken");
 const { resJSON } = require("../responseHandler");
-// Your secret key for JWT (should match the one used for generating tokens)
 const jwtSecretKey = process.env.TOKEN_SECRET;
 
 // Middleware function to authenticate requests
@@ -18,7 +17,7 @@ function authenticate(req, res, next) {
   }
 
   const accessToken = parts[1];
-
+  // const accessToken = authorizationHeader;
   // Verify the token
   jwt.verify(accessToken, jwtSecretKey, (err, decoded) => {
     if (err) {
