@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const url = "mongodb://localhost:27017/joblisting";
+const cors = require("cors");
 
 //Models
 const User = require("./models/User");
@@ -22,15 +23,15 @@ const { authenticate, jwtSecretKey } = require("./middlewares/authMiddleware");
 
 const app = express();
 
+app.use(express.json());
+app.use(cors());
+
 mongoose.connect(url, { useNewUrlParser: true });
 const con = mongoose.connection;
 
 con.on("open", () => {
   console.log("connected...");
 });
-
-// Middleware
-app.use(express.json());
 
 //Using register route
 app.use("/api", userRegisterRoute);
@@ -43,9 +44,9 @@ app.use("/api/hr/auth", hrLoginRoute);
 //Using job route
 app.use("/api", jobRoutes);
 
-// Protected route (requires authentication)
+// Protected route (Check authentication)
 app.get("/api/protected", authenticate, (req, res) => {
-  // Access user data from req.user (includes userType)
+  // Access user data from req.user
   res.status(200).json({ message: "Protected route" });
 });
 
@@ -54,9 +55,6 @@ app.get("/api/protected", authenticate, (req, res) => {
 // Import authentication controller
 // const userProfileRoutes = require("./routes/userProfile");
 // const jwt = require("jsonwebtoken");
-// const cors = require("cors");
-
-// app.use(cors());
 
 // // Connect to MongoDB
 // mongoose
