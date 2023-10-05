@@ -16,6 +16,8 @@ const userLoginRoute = require("./routes/user/login");
 const hrRegisterRoute = require("./routes/hr/register");
 const hrLoginRoute = require("./routes/hr/login");
 
+const hrDashboardRoute = require("./routes/hr/dashboard");
+
 const jobRoutes = require("./routes/job/job");
 
 //Middlewares
@@ -40,6 +42,9 @@ app.use("/api/hr", hrRegisterRoute);
 //Using login route
 app.use("/api/auth", userLoginRoute);
 app.use("/api/hr/auth", hrLoginRoute);
+
+//Using dashboard route
+app.use("/api/dashboard", hrDashboardRoute);
 
 //Using job route
 app.use("/api", jobRoutes);

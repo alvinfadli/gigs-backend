@@ -108,9 +108,14 @@ router.put(
   }
 );
 
-router.get("/jobs", async (req, res) => {
+router.get("/jobs", auth.authenticate, async (req, res) => {
   try {
-    const jobs = await Job.find();
+    const page = parseInt(req.query.page) || 1;
+    const perPage = 10;
+
+    const skip = (page - 1) * perPage;
+
+    const jobs = await Job.find().skip(skip).limit(perPage);
 
     resJSON(res, 200, jobs);
   } catch (error) {
