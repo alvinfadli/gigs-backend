@@ -15,7 +15,7 @@ const jobSchema = new mongoose.Schema({
   salary: String,
   applicationDeadline: Date,
   postedDate: Date,
-  status: {
+  jobType: {
     type: String,
     enum: ["CONTRACT", "FULL_TIME", "INTERNSHIP"],
   },

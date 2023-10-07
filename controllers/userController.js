@@ -28,7 +28,7 @@ async function authenticate(req, res) {
         userType: "user",
       },
       jwtSecretKey,
-      { expiresIn: "1h" }
+      { expiresIn: "1d" }
     );
 
     const refreshToken = jwt.sign(

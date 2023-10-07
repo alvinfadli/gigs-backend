@@ -35,7 +35,6 @@ async function hrAuthenticate(req, res) {
       {
         id: hr._id,
         email: hr.email,
-        userType: "hr",
       },
       jwtSecretKey,
       { expiresIn: "7d" }
