@@ -41,7 +41,7 @@ router.get("/alljobs", authenticate, async (req, res) => {
   }
 });
 
-router.get("/activejobs", authenticate, async (req, res) => {
+router.get("/activejobs/total", authenticate, async (req, res) => {
   try {
     const hrUserId = new mongoose.Types.ObjectId(req.user);
 
@@ -93,6 +93,33 @@ router.get("/totalapplications/pending", authenticate, async (req, res) => {
     });
   } catch (error) {
     // Handle any errors
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+router.get("/activejobs", authenticate, async (req, res) => {
+  try {
+    const hrUserId = new mongoose.Types.ObjectId(req.user);
+    const { jobType } = req.query; // Get the jobType parameter from the query string
+
+    // Define a filter object based on the jobType parameter
+    const filter = {
+      hrUser: hrUserId,
+      applicationDeadline: { $gte: new Date() }, // Filter jobs with a deadline greater than or equal to the current date
+    };
+
+    // If jobType is provided in the query, add it to the filter
+    if (jobType) {
+      filter.jobType = jobType.toUpperCase(); // Assuming jobType values are stored in uppercase
+    }
+
+    // Fetch active jobs based on the filter
+    const activeJobs = await Job.find(filter);
+
+    return resJSON(res, 200, {
+      activeJobs,
+    });
+  } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
