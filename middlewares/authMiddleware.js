@@ -26,6 +26,7 @@ function authenticate(req, res, next) {
 
     // Store user information in the request for use in other routes
     req.user = decoded.id;
+    req.userName = decoded.name;
     req.userType = decoded.userType;
     next();
   });
