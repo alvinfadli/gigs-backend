@@ -24,6 +24,7 @@ async function hrAuthenticate(req, res) {
     const accessToken = jwt.sign(
       {
         id: hr._id,
+        name: hr.name,
         email: hr.email,
         userType: "hr",
       },
