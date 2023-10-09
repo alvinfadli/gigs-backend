@@ -6,7 +6,6 @@ const Job = require("../../models/Job");
 const Application = require("../../models/Application");
 const router = express.Router();
 
-// Authentication route
 router.get("/alljobs", authenticate, async (req, res) => {
   try {
     const hrUserId = new mongoose.Types.ObjectId(req.user);
@@ -24,18 +23,15 @@ router.get("/alljobs", authenticate, async (req, res) => {
       },
     ]);
 
+    // No jobs found for the HR user
     if (result.length === 0) {
-      // No jobs found for the HR user
       return resJSON(res, 200, { totalJobs: 0 });
     }
 
-    // Extract the total job count from the result
     const totalJobs = result[0].totalJobs;
 
-    // Respond with the total job count
     resJSON(res, 200, { totalJobs });
   } catch (error) {
-    // Handle any errors
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -49,13 +45,12 @@ router.get("/activejobs/total", authenticate, async (req, res) => {
     const currentDate = new Date();
     const totalActiveJobs = await Job.countDocuments({
       hrUser: hrUserId,
-      applicationDeadline: { $gte: currentDate }, // Filter jobs with a deadline greater than or equal to the current date
+      applicationDeadline: { $gte: currentDate },
     });
     return resJSON(res, 200, {
       totalActiveJobs,
     });
   } catch (error) {
-    // Handle any errors
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -74,7 +69,6 @@ router.get("/totalapplications", authenticate, async (req, res) => {
       totalApplications,
     });
   } catch (error) {
-    // Handle any errors
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -92,7 +86,6 @@ router.get("/totalapplications/pending", authenticate, async (req, res) => {
       totalPendingApplications,
     });
   } catch (error) {
-    // Handle any errors
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -100,24 +93,56 @@ router.get("/totalapplications/pending", authenticate, async (req, res) => {
 router.get("/activejobs", authenticate, async (req, res) => {
   try {
     const hrUserId = new mongoose.Types.ObjectId(req.user);
-    const { jobType } = req.query; // Get the jobType parameter from the query string
+    const { jobType } = req.query;
 
     // Define a filter object based on the jobType parameter
     const filter = {
       hrUser: hrUserId,
-      applicationDeadline: { $gte: new Date() }, // Filter jobs with a deadline greater than or equal to the current date
+      applicationDeadline: { $gte: new Date() },
     };
 
-    // If jobType is provided in the query, add it to the filter
     if (jobType) {
-      filter.jobType = jobType.toUpperCase(); // Assuming jobType values are stored in uppercase
+      filter.jobType = jobType.toUpperCase();
     }
 
-    // Fetch active jobs based on the filter
     const activeJobs = await Job.find(filter);
 
     return resJSON(res, 200, {
       activeJobs,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+router.get("/activejobs/details", authenticate, async (req, res) => {
+  try {
+    const hrUserId = new mongoose.Types.ObjectId(req.user);
+    const { id } = req.query;
+
+    // Define a filter object based on the id parameter
+    const filter = {
+      hrUser: hrUserId,
+    };
+
+    if (id) {
+      filter._id = id;
+    }
+
+    console.log(filter);
+    // Query the Job model and populate the user information from the Application model
+    const jobDetails = await Job.find(filter)
+      .populate({
+        path: "applications",
+        populate: {
+          path: "user",
+          model: "User",
+        },
+      })
+      .exec();
+
+    return resJSON(res, 200, {
+      jobDetails,
     });
   } catch (error) {
     console.error(error);
