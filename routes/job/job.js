@@ -21,7 +21,7 @@ router.post(
       .isISO8601()
       .withMessage("Application deadline must be a valid date"),
     body("postedDate").notEmpty().withMessage("Posted date is required"),
-    body("status")
+    body("jobType")
       .notEmpty()
       .withMessage("Status is required")
       .isIn(["CONTRACT", "FULL_TIME", "INTERNSHIP"])
@@ -33,12 +33,12 @@ router.post(
       if (!errors.isEmpty()) {
         return resJSON(res, 400, errors.array(), "Validation failed");
       }
-      if (req.user.userType !== "hr") {
+      if (req.userType !== "hr") {
         return resJSON(res, 403, null, "Only HR users can create jobs");
       }
 
       const newJob = new Job(req.body);
-      newJob.hrUser = req.user.id;
+      newJob.hrUser = req.user;
 
       await newJob.save();
 
@@ -144,9 +144,8 @@ router.get("/jobs/:jobId", auth.authenticate, async (req, res) => {
 router.get("/jobs/apply/:jobId", auth.authenticate, async (req, res) => {
   try {
     const jobId = req.params.jobId;
-    const userId = req.user.id;
+    const userId = req.user;
 
-    // Check if the user has already applied for this job
     const existingApplication = await Application.findOne({
       user: userId,
       job: jobId,
@@ -158,16 +157,18 @@ router.get("/jobs/apply/:jobId", auth.authenticate, async (req, res) => {
       });
     }
 
-    // Create a new application
     const newApplication = new Application({
       user: userId,
       job: jobId,
       applicationDate: new Date(),
-      status: "Pending", // You can set the initial status as you prefer
+      status: "Pending",
     });
 
-    // Save the application to the database
     await newApplication.save();
+
+    await Job.findByIdAndUpdate(jobId, {
+      $push: { applications: newApplication._id },
+    });
 
     resJSON(res, 200, { message: "Job application successful" });
   } catch (error) {
