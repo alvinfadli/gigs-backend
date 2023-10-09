@@ -5,6 +5,12 @@ const jobSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Hr",
   },
+  applications: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Application",
+    },
+  ],
   title: String,
   company_name: String,
   description: String,
