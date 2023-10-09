@@ -44,6 +44,7 @@ async function hrAuthenticate(req, res) {
     resJSON(res, 200, {
       accessToken,
       refreshToken,
+      userType: "hr",
     });
   } catch (error) {
     console.error("Error during authentication:", error);

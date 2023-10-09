@@ -36,7 +36,6 @@ async function authenticate(req, res) {
         id: user._id,
         name: user.name,
         email: user.email,
-        userType: "user",
       },
       jwtSecretKey,
       { expiresIn: "7d" }
