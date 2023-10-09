@@ -9,7 +9,6 @@ The backend repository for Gigs
 
 - Node JS (Express)
 - MongoDB
-- Docker
 
 ## Run Locally
 
