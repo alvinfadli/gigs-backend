@@ -4,6 +4,7 @@ const { resJSON } = require("../../responseHandler");
 const mongoose = require("mongoose");
 const Job = require("../../models/Job");
 const Application = require("../../models/Application");
+const UserProfile = require("../../models/UserProfile");
 const router = express.Router();
 
 // Authentication route
@@ -116,8 +117,24 @@ router.get("/activejobs", authenticate, async (req, res) => {
     // Fetch active jobs based on the filter
     const activeJobs = await Job.find(filter);
 
+    // Create an array to store the modified job objects with the total number of applications
+    const jobsWithTotalApplications = [];
+
+    // Iterate through the activeJobs and calculate the total number of applications for each job
+    for (const job of activeJobs) {
+      const totalApplications = await Application.countDocuments({
+        job: job._id,
+        status: "Pending",
+      });
+      const jobWithTotalApplications = {
+        ...job.toObject(), // Convert the Mongoose document to a plain object
+        totalApplications,
+      };
+      jobsWithTotalApplications.push(jobWithTotalApplications);
+    }
+
     return resJSON(res, 200, {
-      activeJobs,
+      activeJobs: jobsWithTotalApplications, // Return the modified job objects with total applications
     });
   } catch (error) {
     console.error(error);
@@ -130,7 +147,6 @@ router.get("/activejobs/user-applied", authenticate, async (req, res) => {
     const hrUserId = new mongoose.Types.ObjectId(req.user);
     const { id } = req.query;
 
-    // Define a filter object based on the id parameter
     const filter = {
       hrUser: hrUserId,
     };
@@ -139,7 +155,6 @@ router.get("/activejobs/user-applied", authenticate, async (req, res) => {
       filter._id = id;
     }
 
-    // Query the Job model and populate the user information from the Application model
     const jobDetails = await Job.find(filter)
       .populate({
         path: "applications",
@@ -150,16 +165,96 @@ router.get("/activejobs/user-applied", authenticate, async (req, res) => {
       })
       .exec();
 
-    // Extract user data from the populated applications
-    const usersApplied = jobDetails.flatMap((job) =>
-      job.applications.map((application) => application.user)
-    );
+    const usersApplied = [];
+
+    for (const job of jobDetails) {
+      for (const application of job.applications) {
+        const user = application.user;
+
+        // Fetch user profile information from UserProfile model
+        const userProfile = await UserProfile.findOne({ user: user._id });
+
+        // Check if the application status is "Pending"
+        if (application.status === "Pending") {
+          usersApplied.push({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            contactNumber: userProfile ? userProfile.contactNumber : null,
+            application_id: application._id,
+            application_status: application.status,
+            address: userProfile ? userProfile.address : null,
+          });
+        }
+      }
+    }
 
     return resJSON(res, 200, {
       usersApplied,
     });
   } catch (error) {
     console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.put("/applications/:id/reject", async (req, res) => {
+  try {
+    const application = await Application.findByIdAndUpdate(
+      req.params.id,
+      { status: "Rejected" },
+      { new: true }
+    );
+
+    if (!application) {
+      return res.status(404).send("Application not found");
+    }
+
+    res.send(application);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+router.put("/applications/:id/accept", async (req, res) => {
+  try {
+    const application = await Application.findByIdAndUpdate(
+      req.params.id,
+      { status: "Accepted" },
+      { new: true }
+    );
+
+    if (!application) {
+      return res.status(404).send("Application not found");
+    }
+
+    res.send(application);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+router.get("/applications", authenticate, async (req, res) => {
+  try {
+    const jobId = req.query.jobId; // Get the job ID from the query parameter
+
+    if (!jobId) {
+      return res
+        .status(400)
+        .json({ error: "Job ID is required as a query parameter." });
+    }
+
+    // Fetch applications for the specified job ID with status "Pending" along with user details
+    const applications = await Application.find({
+      job: jobId,
+      status: "Pending",
+    }).populate("user", "name email"); // Populate the user field with name and email
+
+    return res.json({
+      applications,
+    });
+  } catch (error) {
+    console.error("Error fetching applications:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
